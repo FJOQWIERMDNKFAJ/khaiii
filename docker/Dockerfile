@@ -16,7 +16,7 @@ WORKDIR /workspace/khaiii/build
 
 RUN cmake ..
 RUN make all
-RUN make resource
+RUN make large_resource
 
 RUN apt-get install -y language-pack-ko
 RUN locale-gen en_US.UTF-8
