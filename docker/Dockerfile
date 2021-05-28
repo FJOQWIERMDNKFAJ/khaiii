@@ -26,4 +26,5 @@ WORKDIR /workspace/khaiii/build/package_python
 RUN pip install .
 WORKDIR /workspace/khaiii
 
-CMD ["/bin/bash"]
+ENTRYPOINT ["python", "main.py"]
+CMD ["설문조사 설계부터, 응답수집, 결과 분석까지 모든 과정을 쉽고 간편하게 수행해보세요."]
