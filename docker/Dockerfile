@@ -21,5 +21,9 @@ RUN make large_resource
 RUN apt-get install -y language-pack-ko
 RUN locale-gen en_US.UTF-8
 RUN update-locale LANG=en_US.UTF-8
+RUN make package_python
+WORKDIR /workspace/khaiii/build/package_python
+RUN pip install .
+WORKDIR /workspace/khaiii
 
 CMD ["/bin/bash"]
