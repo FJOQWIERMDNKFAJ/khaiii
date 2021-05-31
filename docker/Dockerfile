@@ -1,17 +1,45 @@
-FROM pytorch/pytorch:latest
-MAINTAINER nako.sung@navercorp.com
+ARG FUNCTION_DIR="/var/task"
 
-#RUN git clone https://github.com/kakao/khaiii.git
-WORKDIR /workspace/khaiii
-COPY . .
+FROM pytorch/pytorch:latest AS build-image
+# Install aws-lambda-cpp build dependencies
+RUN apt-get update && \
+        apt-get install -y \
+        g++ \
+        make \
+        cmake \
+        unzip \
+        libcurl4-openssl-dev
+
+# Include global arg in this stage of the build
+ARG FUNCTION_DIR
+
+# Create function directory
+RUN mkdir -p ${FUNCTION_DIR}
+
+# Copy function code
+COPY . ${FUNCTION_DIR}
+
+# Install the runtime interface client
+RUN pip install --target ${FUNCTION_DIR} awslambdaric
+
+
+
+FROM pytorch/pytorch:latest
+
+ARG FUNCTION_DIR
+COPY aws-lambda-rie /usr/local/bin/
+COPY entry_script.sh /
+
+WORKDIR ${FUNCTION_DIR}
+COPY --from=build-image ${FUNCTION_DIR} ${FUNCTION_DIR}
 
 RUN pip install cython
 RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 RUN apt update -y && apt install -y build-essential
 
 RUN mkdir build
-WORKDIR /workspace/khaiii/build
+WORKDIR ${FUNCTION_DIR}/build
 
 
 RUN cmake ..
@@ -22,9 +50,9 @@ RUN apt-get install -y language-pack-ko
 RUN locale-gen en_US.UTF-8
 RUN update-locale LANG=en_US.UTF-8
 RUN make package_python
-WORKDIR /workspace/khaiii/build/package_python
+WORKDIR ${FUNCTION_DIR}/build/package_python
 RUN pip install .
-WORKDIR /workspace/khaiii
+WORKDIR ${FUNCTION_DIR}
 
-ENTRYPOINT ["python", "main.py"]
-CMD ["설문조사 설계부터, 응답수집, 결과 분석까지 모든 과정을 쉽고 간편하게 수행해보세요."]
+ENTRYPOINT ["/bin/sh", "/entry_script.sh"]
+CMD ["lambda_handler.lambda_handler"]
